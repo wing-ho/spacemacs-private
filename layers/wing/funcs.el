@@ -1,4 +1,5 @@
-(require'cl)
+(require 'cl-lib)
+(require 'url-util)
 
 (setq hexo-dir "~/Blog")
 
@@ -16,6 +17,94 @@
   (evil-find-char 1 (string-to-char ":"))
   (kill-line)
   )
+(defun wing/save-chrome-session()
+  "Reads Google Chrome current session and generate org-mode heading with items."
+  (interactive)
+  (save-excursion
+    (insert (do-applescript "
+set strResult to \"* \" & (do shell script \"date '+%Y-%m-%d %T'\") & \"\n\"
+tell application \"Google Chrome\"
+	repeat with theWindow in every window
+		set theTabIndex to 0
+		repeat with theTab in every tab of theWindow
+			set theTabIndex to theTabIndex + 1
+			set strResult to strResult & \"  - [[\" & theTab's URL & \"][\" & theTab's title & \"]]\n\"
+		end repeat
+	end repeat
+end tell
+return strResult
+"))))
+(defun wing/restore-chrome-session ()
+  "Restore session, by openning each link in list with (browse-url).
+  Make sure to put cursor on date heading that contains list of urls."
+  (interactive)
+  (save-excursion
+    (beginning-of-line)
+    (when (looking-at "^\\*")
+      (forward-line 1)
+      (while (looking-at "^  - \\[\\[http[^]]*\\]\\[")
+        (let ((ln (thing-at-point 'line t)))
+          (when (string-match  "^  - \\[\\[\\([^]]*\\)\\]\\[" ln)
+            (setq ln (match-string 1 ln))
+            (browse-url ln)))
+        (forward-line 1)))))
+(defun wing/open-url-in-chrome (url)
+  "Open URL in Google Chrome.  I use AppleScript to do several things:
+  1. I tell Chrome to come to the front. If Chrome wasn't launched, this will also launch it.
+  2. If Chrome has no windows open, I tell it to create one.
+  3. If Chrome has a tab showing URL, I tell it to reload the tab, make that tab the active tab in its window, and bring its window to the front.
+  4. If Chrome has no tab showing URL, I tell Chrome to make a new tab (in the front window) showing URL."
+  (when (symbolp url)
+    ; User passed a symbol instead of a string.  Use the symbol name.
+    (setq url (symbol-name url)))
+  (do-applescript (format "
+tell application \"Google Chrome\"
+	activate
+	set theUrl to %S
+
+	if (count every window) = 0 then
+		make new window
+	end if
+
+	set found to false
+	set theTabIndex to -1
+	repeat with theWindow in every window
+		set theTabIndex to 0
+		repeat with theTab in every tab of theWindow
+			set theTabIndex to theTabIndex + 1
+			if theTab's URL = theUrl then
+				set found to true
+				exit
+			end if
+		end repeat
+
+		if found then
+			exit repeat
+		end if
+	end repeat
+
+	if found then
+		tell theTab to reload
+		set theWindow's active tab index to theTabIndex
+		set index of theWindow to 1
+	else
+		tell window 1 to make new tab with properties {URL:theUrl}
+	end if
+end tell
+  " url)))
+
+(defvar wing/open-in-chrome-url nil
+  "*The URL that the wing/open-in-chrome function will send to Google Chrome.")
+
+(defun wing/open-in-chrome (arg)
+  "Open or reload a file in Google Chrome.  If you give me a prefix argument, I get Chrome's currently-displayed URL and save it for the future.  If you don't give me a prefix argument, I send the previously-saved URL to Chrome for reloading."
+  (interactive "P")
+  (cond
+   (arg (setq wing/open-in-chrome-url (do-applescript "tell application \"Google Chrome\" to get window 1's active tab's URL")))
+   ((not wing/open-in-chrome-url) (error "You haven't set a URL for me to send to the browser."))
+   (t (save-buffer)
+      (wing/open-url-in-chrome wing/open-in-chrome-url))))
+
 (defun wing/run-tangle()
     (interactive)
     (let* (langs lang tangle-file filename ext dir)
@@ -24,7 +113,7 @@
                     ("shell" . "sh")
                     ("emacs-lisp" . "el")
                     ))
-      ;; 获取code block的语言 
+      ;; 获取code block的语言
       (setq lang (nth 0 (org-babel-get-src-block-info)))
       ;; 获取:tangle
       (setq tangle-file (cdr (assoc :tangle (nth 2 (org-babel-get-src-block-info))))) 
@@ -39,6 +128,9 @@
       (unless (file-exists-p dir)
         (make-directory dir t))
       (org-babel-tangle '(4) filename)
+      (when (string-equal lang "html")
+        (wing/open-url-in-chrome (concat "file://" (url-encode-url filename)))
+        )
       ;; (shell-command (concat "open -a \"Google Chrome\" " dir tangle-file))
       )
     )

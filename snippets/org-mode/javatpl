@@ -1,0 +1,12 @@
+# -*- mode: snippet -*-
+# name:javatpl
+# key:javatpl
+# expand-env: ((yas-indent-line 'fixed))
+# --
+#+BEGIN_SRC java :wrap example :classname $1 :tangle $1.java :cmdline -cp bin :cmpflag -g -d bin
+public class $1{
+       public static void main(String[] args){
+              System.out.println("$0");
+       }
+}
+#+END_SRC

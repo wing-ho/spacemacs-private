@@ -74,6 +74,7 @@ values."
      ;; <M-m f e R> (Emacs style) to install them.
      ;; ----------------------------------------------------------------
      helm
+     ;; (ivy :variables ivy-enable-advanced-buffer-information nil)
 
      auto-completion
      ;; better-defaults
@@ -84,6 +85,7 @@ values."
      git
      ;; gtags
      ;;(shell :variables shell-default-shell 'shell)
+     ;; (setq shell-default-shell 'ansi-term)
      ;; (setq shell-default-shell 'eshell)
      (shell :variables
             ;; shell-default-shell 'ansi-term
@@ -98,11 +100,11 @@ values."
    ;; wrapped in a layer. If you need some configuration for these
    ;; packages, then consider creating a layer. You can also put the
    ;; configuration in `dotspacemacs/user-config'.
-   dotspacemacs-additional-packages '()
+   dotspacemacs-additional-packages '(cnfonts)
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
    ;; A list of packages that will not be installed and loaded.
-   dotspacemacs-excluded-packages '()
+   dotspacemacs-excluded-packages '(pangu-spacing)
    ;; Defines the behaviour of Spacemacs when installing packages.
    ;; Possible values are `used-only', `used-but-keep-unused' and `all'.
    ;; `used-only' installs only explicitly used packages and uninstall any
@@ -181,8 +183,9 @@ values."
    dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
-   dotspacemacs-default-font '("Monaco";; "DejaVu Sans Mono Source Code Pro"
-                               :size 14
+   dotspacemacs-default-font '(;;"Monaco";;
+                               "Iosevka SS09";; "DejaVu Sans Mono Source Code Pro"
+                               :size 16
                                :weight normal
                                :width normal
                                :powerline-scale 1.1)
@@ -290,6 +293,8 @@ values."
    ;; If non nil show the color guide hint for transient state keys. (default t)
    dotspacemacs-show-transient-state-color-guide t
    ;; If non nil unicode symbols are displayed in the mode line. (default t)
+   dotspacemacs-mode-line-theme '(spacemacs :separator arrow)
+
    dotspacemacs-mode-line-unicode-symbols t
    ;; If non nil smooth scrolling (native-scrolling) is enabled. Smooth
    ;; scrolling overrides the default behavior of Emacs which recenters point
@@ -367,6 +372,36 @@ This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
   ;;(cnfonts-enable)
+  ;; Chinese and English fonts alignment
+  ;; (use-package cnfonts
+  ;;   :config
+  ;;   (cnfonts-enable)
+  ;;   (setq cnfonts-use-face-font-rescale t)
+  ;;   )
+  (setq global-pangu-spacing-mode -1)
+  (set-face-attribute
+   'default nil
+   ;; :font (font-spec :name "-*-Iosevka SS09-ultrabold-italic-expanded-*-*-*-*-*-m-0-iso10646-1"
+   :font (font-spec :family "Iosevka SS09"
+                    :weight 'normal
+                    :slant 'normal
+                    :size 16.0))
+  (dolist (charset '(kana han symbol cjk-misc bopomofo))
+    (set-fontset-font
+     (frame-parameter nil 'font)
+     charset
+     ;; (font-spec :name "-*-Sarasa Mono SC-bold-italic-normal-*-*-*-*-*-m-0-iso10646-1"
+     (font-spec :family "Sarasa Mono"
+     ;; (font-spec :family "JetBrains Mono"
+                :weight 'normal
+                :slant 'normal
+                :size 16.0)))
+
+  ;; (set-face-attribute 'default nil :font
+  ;;                     (format   "%s:pixelsize=%d" "Monaco" 17))
+  ;; (dolist (charset '(kana han cjk-misc bopomofo))
+  ;;   (set-fontset-font (frame-parameter nil 'font) charset
+  ;;                     (font-spec :family "JetBrains Mono" :size 24)))
   (setq-default evil-escape-delay 0.2)
   (setq-default evil-escape-key-sequence "jk")
   ;;(setq org-export-with-section-numbers nil)
@@ -389,30 +424,9 @@ you should place your code here."
   ;;如果你有一些经常使用的函数，可以定义在org文件中，在这里把这些函数引入进来，在org文件中就可以调用了
   ;;#+call: func_name(param)
   ;;(org-babel-lob-ingest "/home/wing/Notes/emacs.org")
-
-  ;;跟说明文档中定义方法不一样
-  ;;https://github.com/syl20bnr/spacemacs/issues/3716
-  ;; (setq eclim-eclipse-dirs "~/runtime/eclipse"
-  ;;       eclim-executable "~/runtime/eclipse/eclim"
-  ;;       eclimd-default-workspace "~/workspace"
-  ;;       eclimd-wait-for-process nil)
+  ;; 不要忽略snippets中的空格
+  ;; (setq yas-indent-line (quote none))
   ;;复用dired的buffer
-  (with-eval-after-load "dired"
-    ;; don't remove `other-window', the caller expects it to be there
-    '(defun dired-up-directory (&optional other-window)
-       "Run Dired on parent directory of current directory."
-       (interactive "P")
-       (let* ((dir (dired-current-directory))
-              (orig (current-buffer))
-              (up (file-name-directory (directory-file-name dir))))
-         (or (dired-goto-file (directory-file-name dir))
-             ;; Only try dired-goto-subdir if buffer has more than one dir.
-             (and (cdr dired-subdir-alist)
-                  (dired-goto-subdir up))
-             (progn
-               (kill-buffer orig)
-               (dired up)
-               (dired-goto-file dir))))))
   (add-hook 'dired-mode-hook
             (lambda ()
               (define-key dired-mode-map (kbd "^")

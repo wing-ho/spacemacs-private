@@ -54,8 +54,8 @@
     (setq org-image-actual-width '(600))
     (setq org-src-fontify-natively t)
     (setq org-superstar-headline-bullets-list '("◉" "○" "■" "◆" "▲" "▶"))
-    ;;org文档中插入代码支持那种语言
     (setq org-confirm-babel-evaluate nil)
+    ;;org文档中插入代码支持那种语言
     (org-babel-do-load-languages
      'org-babel-load-languages
      '((C . t)
