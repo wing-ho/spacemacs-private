@@ -1,6 +1,13 @@
-# Spacemacs 配置 
+# Spacemacs 配置
 我从2015开始使用Emacs的，使用Emacs它只是因为它可以正常输入中文，而Sublime Text还得打个补丁。经过一年左右的适应期之后，就深深地爱上了这个编辑器了。每次开机第一时间就是打开浏览器是Emacs编辑器，使用的时间多了，就积累了一些自己的配置经验。配置方法是仿效子龙山人的，我使用最多的是Org Mode，hack了里面的一些函数都放到了自己的layer当中。
 实现的一些功能有：
 1. 写静态博客的时候图片可以直接拖放到文件中。
 2. 对ob-babel中一些包进行设置或着稍微的增强。
 3. 添加一些必要的hook函数，调整编辑器的行为。
+使用环境Debian 9，Emacs25，根据spacemacs开发版进行配置。
+
+安装办法：
+#+BEGIN_SRC bash
+  git clone https://github.com/syl20bnr/spacemacs.git ~/.emacs.d -b develop
+  git clone https://github.com/wing-ho/spacemacs-private.git ~/.spacemacs.d/
+#+END_SRC
