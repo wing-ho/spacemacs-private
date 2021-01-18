@@ -31,20 +31,36 @@ values."
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
    '(
-     org
+     rust
+     lua
+     nginx
+     restclient
+     (org :variables org-enable-hugo-support t
+          ;; https://github.com/syl20bnr/spacemacs/issues/6248
+          org-enable-github-support t
+          ;; o opens a newline below as expected, while: O opens HELM Completion At Point
+          ;; https://github.com/syl20bnr/spacemacs/issues/13465
+          org-src-tab-acts-natively nil)
+     docker
+     react
+     search-engine
      yaml
      sql
      php
      common-lisp
-     (chinese :packages youdao-dictionary fcitx
-              :variables chinese-enable-fcitx nil
+     (chinese :variables chinese-enable-fcitx t
               chinese-enable-youdao-dict t)
      python
      java
-     html
+     (html :variables html-enable-lsp t css-enable-lsp t scss-enable-lsp t)
      markdown
-     (javascript :variables javascript-disable-tern-port-files nil
-                 :variables tern-command '("node" "/home/wing/Runtime/nodejs/node-v8.4.0-linux-x64/node_global/bin/tern"))
+     (javascript :variables javascript-backend 'lsp
+                 js2-mode-show-strict-warnings nil
+                 js2-mode-show-parse-errors nil)
+     (typescript :variables
+                 typescript-fmt-on-save nil
+                 typescript-fmt-tool 'typescript-formatter
+                 typescript-backend 'lsp)
      (ibuffer :variables ibuffer-group-buffers-by 'projects)
      wing
      (ranger :variables
@@ -58,14 +74,19 @@ values."
      ;; <M-m f e R> (Emacs style) to install them.
      ;; ----------------------------------------------------------------
      helm
+
      auto-completion
      ;; better-defaults
      ;; pdf-tools
+     (osx :variables osx-dictionary-dictionary-choice "Simplified Chinese - English"
+          osx-command-as 'super)
      emacs-lisp
      git
      ;; gtags
      ;;(shell :variables shell-default-shell 'shell)
+     ;; (setq shell-default-shell 'eshell)
      (shell :variables
+            ;; shell-default-shell 'ansi-term
             shell-default-shell 'eshell
             shell-default-height 30
             shell-default-position 'bottom)
@@ -77,7 +98,7 @@ values."
    ;; wrapped in a layer. If you need some configuration for these
    ;; packages, then consider creating a layer. You can also put the
    ;; configuration in `dotspacemacs/user-config'.
-   dotspacemacs-additional-packages '(htmlize cnfonts meghanada groovy-mode gradle-mode)
+   dotspacemacs-additional-packages '()
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
    ;; A list of packages that will not be installed and loaded.
@@ -160,7 +181,7 @@ values."
    dotspacemacs-colorize-cursor-according-to-state t
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
-   dotspacemacs-default-font '("DejaVu Sans Mono" ;;Source Code Pro
+   dotspacemacs-default-font '("Monaco";; "DejaVu Sans Mono Source Code Pro"
                                :size 14
                                :weight normal
                                :width normal
@@ -328,10 +349,10 @@ executes.
  This function is mostly useful for variables that need to be set
 before packages are loaded. If you are unsure, you should try in setting them in
 `dotspacemacs/user-config' first."
-  ;; (setq configuration-layer--elpa-archives
-  ;;       '(("melpa-cn" . "http://elpa.emacs-china.org/melpa/")
-  ;;         ("org-cn"   . "http://elpa.emacs-china.org/org/")
-  ;;         ("gnu-cn"   . "http://elpa.emacs-china.org/gnu/")))
+   (setq configuration-layer--elpa-archives
+         '(("melpa-cn" . "http://elpa.emacs-china.org/melpa/")
+           ("org-cn"   . "http://elpa.emacs-china.org/org/")
+           ("gnu-cn"   . "http://elpa.emacs-china.org/gnu/")))
 
   ;; https://github.com/syl20bnr/spacemacs/issues/2705
   ;; (setq tramp-mode nil)
@@ -345,9 +366,18 @@ layers configuration.
 This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
-  (cnfonts-enable)
+  ;;(cnfonts-enable)
   (setq-default evil-escape-delay 0.2)
   (setq-default evil-escape-key-sequence "jk")
+  ;;(setq org-export-with-section-numbers nil)
+  ;; 必须在 (require 'org) 之前
+  (setq org-emphasis-regexp-components
+        ;; markup 记号前后允许中文
+        (list (concat " \t('\"{"            "[:nonascii:]")
+              (concat "- \t.,:!?;'\")}\\["  "[:nonascii:]")
+              " \t\r\n,\"'"
+              "."
+              1))
   (with-eval-after-load 'evil
     (define-key evil-normal-state-map (kbd "j") 'evil-next-visual-line)
     (define-key evil-normal-state-map (kbd "k") 'evil-previous-visual-line))
@@ -389,13 +419,12 @@ you should place your code here."
                 (lambda () (interactive) (find-alternate-file "..")))
               ))
 
+  (add-hook 'treemacs-mode-hook (lambda() (display-line-numbers-mode nil)))
   ;;neotree开启行号
-  (add-hook 'neo-after-create-hook (lambda(_unused) (linum-mode t)))
+  (add-hook 'neo-after-create-hook (lambda(_) (linum-mode t)))
   ;; (setq-default neo-autorefresh t)
   ;;开启号
-  (global-hl-line-mode -1)
-  ;; 解决  powerline 显示有问题
-  (setq powerline-default-separator 'utf-8)
+  ;;(global-hl-line-mode -1)
   ;;加速启动过程
   (setq tramp-ssh-controlmaster-options
         "-o ControlMaster=auto -o ControlPath='tramp.%%C' -o ControlPersist=no")
@@ -407,19 +436,6 @@ you should place your code here."
     (add-to-list 'tramp-default-proxies-alist
                  '((regexp-quote (system-name)) nil nil))
     )
-  ;;让gtags搜索jdk，注意目录要写完整路径
-  (setenv "GTAGSLIBPATH" "/home/wing/runtime/java/jdk1.8.0_162/src")
-  (setenv "GTAGSTHROUGH" "true")
-  (require 'meghanada)
-  (add-hook 'java-mode-hook
-            (lambda ()
-              (meghanada-mode t)
-              (gradle-mode t)
-              (add-hook 'before-save-hook 'delete-trailing-whitespace)))
-  (add-hook 'groovy-mode-hook
-            (lambda ()
-              (gradle-mode t)))
-
   (with-eval-after-load 'web-mode
     (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
     (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
@@ -437,24 +453,12 @@ you should place your code here."
    web-mode-attr-indent-offset 2)
   (setq
    auto-mode-alist (append '(("\\.vue\\'" . web-mode)) auto-mode-alist))
+  (setq custom-file (expand-file-name "custom.el" dotspacemacs-directory))
+  (load custom-file 'no-error 'no-message)
   )
 (defun dotspacemacs/emacs-custom-settings ()
   "Emacs custom settings.
 This is an auto-generated function, do not modify its content directly, use
 Emacs customize menu instead.
 This function is called at the very end of Spacemacs initialization."
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (ob-redis blog-admin youdao-dictionary yasnippet-snippets yapfify yaml-mode xterm-color ws-butler winum which-key web-mode web-beautify volatile-highlights vi-tilde-fringe uuidgen use-package toc-org tagedit symon string-inflection sql-indent spaceline-all-the-icons smeargle slime-company slim-mode shell-pop scss-mode sass-mode restart-emacs ranger rainbow-delimiters pyvenv pytest pyenv-mode py-isort pug-mode prettier-js popwin pippel pipenv pip-requirements phpunit phpcbf php-extras php-auto-yasnippets persp-mode pcre2el password-generator paradox overseer orgit org-projectile org-present org-pomodoro org-mime org-download org-bullets org-brain open-junk-file neotree nameless mvn multi-term move-text moe-theme mmm-mode meghanada maven-test-mode material-theme markdown-toc magit-svn magit-gitflow lorem-ipsum livid-mode live-py-mode linum-relative link-hint less-css-mode json-navigator json-mode js2-refactor js-doc indent-guide importmagic impatient-mode ibuffer-projectile hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-xref helm-themes helm-swoop helm-pydoc helm-purpose helm-projectile helm-mode-manager helm-make helm-gitignore helm-git-grep helm-flx helm-descbinds helm-css-scss helm-company helm-c-yasnippet helm-ag groovy-mode groovy-imports gradle-mode google-translate golden-ratio gnuplot gitignore-templates gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link gh-md gandalf-theme fuzzy font-lock+ flx-ido fill-column-indicator fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-org evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-magit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-escape evil-ediff evil-cleverparens evil-args evil-anzu eval-sexp-fu eshell-z eshell-prompt-extras esh-help ensime emmet-mode elisp-slime-nav editorconfig dumb-jump drupal-mode dotenv-mode doom-modeline diminish define-word cython-mode counsel-projectile company-web company-tern company-statistics company-php company-emacs-eclim company-anaconda common-lisp-snippets column-enforce-mode cnfonts clean-aindent-mode centered-cursor-mode auto-yasnippet auto-highlight-symbol auto-compile aggressive-indent ace-window ace-link ace-jump-helm-line ac-ispell))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
 )

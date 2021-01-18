@@ -17,18 +17,32 @@
   (kill-line)
   )
 (defun wing/run-tangle()
-  (interactive)
-  (save-excursion
-    (org-babel-tangle-file buffer-file-name)
-    (let (dir tangle-file)
-      (setq dir (file-name-directory buffer-file-name))
-      (setq tangle-file (cdr (assq :tangle  (nth 2 (org-babel-get-src-block-info)))))
-      ;; foreground激活firefox窗口
-      (shell-command (concat "firefox -foreground --new-tab " dir tangle-file  ))
+    (interactive)
+    (let* (langs lang tangle-file filename ext dir)
+      (setq langs '(
+                    ("python" . "py")
+                    ("shell" . "sh")
+                    ("emacs-lisp" . "el")
+                    ))
+      ;; 获取code block的语言 
+      (setq lang (nth 0 (org-babel-get-src-block-info)))
+      ;; 获取:tangle
+      (setq tangle-file (cdr (assoc :tangle (nth 2 (org-babel-get-src-block-info))))) 
+      ;; 如果:tangle等于no 则文件名为index.
+      (if (string-equal tangle-file "no")
+          (setq filename (concat "index."
+                                 (or (cdr (assoc lang langs)) lang)))
+        (setq filename tangle-file))
+      (setq dir (concat (file-name-directory buffer-file-name) (nth 4 (org-heading-components))))
+      (setq filename (expand-file-name filename dir))
+      ;; 目录不存在时自动创建
+      (unless (file-exists-p dir)
+        (make-directory dir t))
+      (org-babel-tangle '(4) filename)
+      ;; (shell-command (concat "open -a \"Google Chrome\" " dir tangle-file))
       )
-    ;; (shell-command (concat "google-chrome " dir tangle-file))
     )
-  )
+
 
 
 ;; copy from https://github.com/zilongshanren/spacemacs-private/blob/develop/layers%2Fzilongshanren%2Ffuncs.el
