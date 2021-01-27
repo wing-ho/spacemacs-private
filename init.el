@@ -79,8 +79,8 @@ values."
      auto-completion
      ;; better-defaults
      ;; pdf-tools
-     (osx :variables osx-dictionary-dictionary-choice "Simplified Chinese - English"
-          osx-command-as 'super)
+     ;; (osx :variables osx-dictionary-dictionary-choice "Simplified Chinese - English"
+     ;;      osx-command-as 'super)
      emacs-lisp
      git
      ;; gtags
@@ -100,11 +100,11 @@ values."
    ;; wrapped in a layer. If you need some configuration for these
    ;; packages, then consider creating a layer. You can also put the
    ;; configuration in `dotspacemacs/user-config'.
-   dotspacemacs-additional-packages '(cnfonts)
+   dotspacemacs-additional-packages '()
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
    ;; A list of packages that will not be installed and loaded.
-   dotspacemacs-excluded-packages '(pangu-spacing)
+   dotspacemacs-excluded-packages '(pangu-spacing pyim)
    ;; Defines the behaviour of Spacemacs when installing packages.
    ;; Possible values are `used-only', `used-but-keep-unused' and `all'.
    ;; `used-only' installs only explicitly used packages and uninstall any
@@ -184,7 +184,9 @@ values."
    ;; Default font, or prioritized list of fonts. `powerline-scale' allows to
    ;; quickly tweak the mode-line size to make separators look not too crappy.
    dotspacemacs-default-font '(;;"Monaco";;
-                               "Iosevka SS09";; "DejaVu Sans Mono Source Code Pro"
+                               ;; "Iosevka SS09"
+                               ;; "WenQuanYi Micro Hei Mono"
+                               "DejaVu Sans Mono";"Source Code Pro"
                                :size 16
                                :weight normal
                                :width normal
@@ -354,10 +356,10 @@ executes.
  This function is mostly useful for variables that need to be set
 before packages are loaded. If you are unsure, you should try in setting them in
 `dotspacemacs/user-config' first."
-   (setq configuration-layer--elpa-archives
-         '(("melpa-cn" . "http://elpa.emacs-china.org/melpa/")
-           ("org-cn"   . "http://elpa.emacs-china.org/org/")
-           ("gnu-cn"   . "http://elpa.emacs-china.org/gnu/")))
+  (setq configuration-layer-elpa-archives
+      '(("melpa-cn" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")
+	      ("org-cn"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/org/")
+	      ("gnu-cn"   . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")))
 
   ;; https://github.com/syl20bnr/spacemacs/issues/2705
   ;; (setq tramp-mode nil)
@@ -371,39 +373,17 @@ layers configuration.
 This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
-  ;;(cnfonts-enable)
-  ;; Chinese and English fonts alignment
-  ;; (use-package cnfonts
-  ;;   :config
-  ;;   (cnfonts-enable)
-  ;;   (setq cnfonts-use-face-font-rescale t)
-  ;;   )
-  (setq global-pangu-spacing-mode -1)
-  (set-face-attribute
-   'default nil
-   ;; :font (font-spec :name "-*-Iosevka SS09-ultrabold-italic-expanded-*-*-*-*-*-m-0-iso10646-1"
-   :font (font-spec :family "Iosevka SS09"
-                    :weight 'normal
-                    :slant 'normal
-                    :size 16.0))
-  (dolist (charset '(kana han symbol cjk-misc bopomofo))
-    (set-fontset-font
-     (frame-parameter nil 'font)
-     charset
-     ;; (font-spec :name "-*-Sarasa Mono SC-bold-italic-normal-*-*-*-*-*-m-0-iso10646-1"
-     (font-spec :family "Sarasa Mono"
-     ;; (font-spec :family "JetBrains Mono"
-                :weight 'normal
-                :slant 'normal
-                :size 16.0)))
-
-  ;; (set-face-attribute 'default nil :font
-  ;;                     (format   "%s:pixelsize=%d" "Monaco" 17))
-  ;; (dolist (charset '(kana han cjk-misc bopomofo))
-  ;;   (set-fontset-font (frame-parameter nil 'font) charset
-  ;;                     (font-spec :family "JetBrains Mono" :size 24)))
   (setq-default evil-escape-delay 0.2)
   (setq-default evil-escape-key-sequence "jk")
+  ;; (require 'pyim)
+  ;; (setq pyim-page-tooltip 'posframe)
+  ;; (setq pyim-page-length 9)
+  ;; (let ((liberime-auto-build t))
+  ;;   (require 'liberime nil t))
+  ;; (setq default-input-method "pyim")
+  ;; (with-eval-after-load "liberime"
+  ;;   (liberime-try-select-schema "luna_pinyin_simp")
+  ;;   (setq pyim-default-scheme 'rime-quanpin))
   ;;(setq org-export-with-section-numbers nil)
   ;; 必须在 (require 'org) 之前
   (setq org-emphasis-regexp-components
@@ -416,26 +396,13 @@ you should place your code here."
   (with-eval-after-load 'evil
     (define-key evil-normal-state-map (kbd "j") 'evil-next-visual-line)
     (define-key evil-normal-state-map (kbd "k") 'evil-previous-visual-line))
-  (add-hook 'python-mode-hook
-            (lambda ()
-              (setq python-shell-interpreter "python")
-              (setq anaconda-mode-server-script
-                    "/usr/local/lib/python2.7/dist-packages/anaconda_mode.py")))
   ;;如果你有一些经常使用的函数，可以定义在org文件中，在这里把这些函数引入进来，在org文件中就可以调用了
   ;;#+call: func_name(param)
   ;;(org-babel-lob-ingest "/home/wing/Notes/emacs.org")
-  ;; 不要忽略snippets中的空格
-  ;; (setq yas-indent-line (quote none))
-  ;;复用dired的buffer
-  (add-hook 'dired-mode-hook
-            (lambda ()
-              (define-key dired-mode-map (kbd "^")
-                (lambda () (interactive) (find-alternate-file "..")))
-              ))
 
   (add-hook 'treemacs-mode-hook (lambda() (display-line-numbers-mode nil)))
   ;;neotree开启行号
-  (add-hook 'neo-after-create-hook (lambda(_) (linum-mode t)))
+  ;; (add-hook 'neo-after-create-hook (lambda(_) (linum-mode t)))
   ;; (setq-default neo-autorefresh t)
   ;;开启号
   ;;(global-hl-line-mode -1)
@@ -475,4 +442,11 @@ you should place your code here."
 This is an auto-generated function, do not modify its content directly, use
 Emacs customize menu instead.
 This function is called at the very end of Spacemacs initialization."
+
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
 )
