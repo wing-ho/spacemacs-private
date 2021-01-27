@@ -15,6 +15,7 @@
 (defconst wing-packages
       '(
         org
+        rime
         blog-admin
         (ob-redis :location (recipe
                                :fetcher github
@@ -25,6 +26,15 @@
 (setq wing-excluded-packages '())
 
 ;; For each package, define a function wing/init-<package-name>
+(defun wing/init-rime ()
+  (use-package rime
+    :custom
+    (default-imput-method "rime")
+    (rime-show-candidate 'posframe)
+    ;; (rime-librime-root (expand-file-name "librime" dotspacemacs-directory))
+    (rime-user-data-dir (expand-file-name "rime" dotspacemacs-directory))
+    ;;(rime-share-data-dir "~/.config/fcitx/rime")
+))
 
 (defun wing/init-blog-admin ()
   (use-package blog-admin
@@ -118,9 +128,17 @@ Otherwise, pass URI and ACTION back to dnd dispatch."
                                     (setq-local org-download-link-format "![](%s)")
                                     (org-download-enable)
                                     ))
-    ;;在org-mode中自动换行
-    (add-hook 'org-mode-hook (lambda ()
-                               (setq truncate-lines nil)))
+    ;;  https://manateelazycat.github.io/emacs/2020/04/02/org-font.html
+    (defun org-buffer-face-mode-variable ()
+      (interactive)
+      (make-face 'width-font-face)
+      (set-face-attribute 'width-font-face nil :font "等距更纱黑体 SC 15")
+      (setq buffer-face-mode-face 'width-font-face)
+      ;;在org-mode中自动换行
+      (setq truncate-lines nil)
+      (buffer-face-mode))
+
+    (add-hook 'org-mode-hook 'org-buffer-face-mode-variable)
     (with-eval-after-load "ob-java"
       (defun org-babel-execute:java (body params)
         (let* ((classname (or (cdr (assq :classname params))
